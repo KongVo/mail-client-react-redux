@@ -1,9 +1,10 @@
 import React from "react";
-import { NavLink } from "react-router-dom";
-import { bindActionCreators } from "redux";
-import { connect } from "react-redux";
-import { storeSentMail } from "../actions/sentMail.js";
-import { storeDraftMail, deleteDraftMail } from "../actions/draft.js";
+import {NavLink} from "react-router-dom";
+import {bindActionCreators} from "redux";
+import {connect} from "react-redux";
+import {storeSentMail} from "../actions/sentMail.js";
+import {storeDraftMail, deleteDraftMail} from "../actions/draft.js";
+import { storeComposeMail } from "../actions/compose.js";
 
 export class ComposeMail extends React.Component {
   constructor(props) {
@@ -16,45 +17,43 @@ export class ComposeMail extends React.Component {
       time: "",
       body: "",
       error: false,
-      valid: false
+      valid: false,
     };
- 
+
     this.handleOnChange = this.handleOnChange.bind(this);
     this.handleOnSubmit = this.handleOnSubmit.bind(this);
     this.handleOnSave = this.handleOnSave.bind(this);
     this.submitValidation = this.submitValidation.bind(this);
+    this.validateEmail = this.validateEmail.bind(this);
   }
 
+  handleCompose(e) {}
+
   handleOnChange(e) {
-    this.setState({ [e.target.name]: e.target.value });
-    this.setState({ error: false });
+    this.setState({[e.target.name]: e.target.value});
+    this.setState({error: false});
     if (this.state.to !== "" && this.validateEmail(this.state.to)) {
-      this.setState({ time: new Date().toISOString() })
-      this.setState({ id: Math.floor(Math.random() * (40 - 11) + 11) })
-      this.setState({ valid: true });
+      this.setState({valid: true});
     } else {
-      this.setState({ valid: false });
+      this.setState({valid: false});
     }
   }
   validateEmail(email) {
-    var re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+    var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
     return re.test(String(email).toLowerCase());
   }
 
   submitValidation() {
     if (this.state.to !== "" && this.validateEmail(this.state.to)) {
-      this.setState({ valid: true });
       this.handleOnSubmit(this.state);
     } else {
-      this.setState({ error: true })
-      this.setState({ valid: false })
+      this.setState({valid: false});
     }
   }
 
   handleOnSubmit(composeData) {
     this.props.storeSentMail(composeData);
     if (this.props.compose.data.id) {
-      console.log("delete draft");
       this.props.deleteDraftMail(this.props.compose.data.id);
     }
   }
@@ -64,23 +63,21 @@ export class ComposeMail extends React.Component {
   }
 
   componentDidMount() {
-    this.setState({ id: this.props.compose.data.id });
-    this.setState({ from: this.props.compose.data.from });
-    this.setState({ to: this.props.compose.data.to });
-    this.setState({ subject: this.props.compose.data.subject });
-    this.setState({ time: this.props.compose.data.time });
-    this.setState({ body: this.props.compose.data.body });
+    this.setState({id: this.props.compose.data.id});
+    this.setState({from: this.props.compose.data.from});
+    this.setState({to: this.props.compose.data.to});
+    this.setState({subject: this.props.compose.data.subject});
+    this.setState({time: this.props.compose.data.time});
+    this.setState({body: this.props.compose.data.body});
     if (
       this.props.compose.data.to !== "" &&
       this.validateEmail(this.props.compose.data.to)
     ) {
-      this.setState({ valid: true });
+      this.setState({valid: true});
     }
   }
 
   render() {
-    
-
     return (
       <div>
         <div className="blur_background" />
@@ -89,10 +86,10 @@ export class ComposeMail extends React.Component {
             <form autocomplete="off">
               <div>
                 <input
-                  type='text'
-                  id='to'
-                  name='to'
-                  placeholder="To..."
+                  type="text"
+                  id="to"
+                  name="to"
+                  placeholder="To.."
                   onChange={this.handleOnChange}
                   value={this.state.to}
                 />
@@ -111,21 +108,25 @@ export class ComposeMail extends React.Component {
               <br />
               <div>
                 <textarea
-                  id='body'
-                  name='body'
-                  placeholder="Your message..."
+                  name="body"
+                  id="body"
+                  cols="30"
+                  rows="10"
                   onChange={this.handleOnChange}
                   value={this.state.body}
-                />
+                  placeholder="Body"
+                ></textarea>
               </div>
               <br />
             </form>
+            
             <div>
               <div>
                 <NavLink to="/inbox">
                   <button className="closemail">x</button>
                 </NavLink>
               </div>
+           
 
               <NavLink
                 className="composebtn"
@@ -133,28 +134,29 @@ export class ComposeMail extends React.Component {
                 to={this.state.valid ? "/sent" : "/composemail"}
               >
                 <button
-                  type="submit"
-                  className="btn-success pull-right composebtn"
+                 // type="submit"
+                 // className="btn-success pull-right composebtn"
                 >
                   Send
                 </button>
               </NavLink>
 
               <NavLink
-                className="composebtn "
+                className="composebtn"
+                 onClick={this.handleOnSave}
                 to="/draft"
+               
               >
-                <button
-                  type="submit"
-                  onClick={this.handleOnSave}
-                  className="btn-success pull-middle composebtn"
+               <button
+                //  type="submit"
+                 // className="btn-success pull-middle composebtn"
                 >
                   Save
                 </button>
               </NavLink>
             </div>
             <br />
-            <span className={"error" + (this.state.error ? "" : " invisible")}>
+            <span className={"error" + (this.state.error ? "" : "  invisible")}>
               All fields are required
             </span>
           </div>
@@ -164,13 +166,13 @@ export class ComposeMail extends React.Component {
   }
 }
 
-const mapStateToProps = state => ({
-  compose: state.compose
+const mapStateToProps = (state) => ({
+  compose: state.compose,
 });
 
-const mapDispatchToProps = dispatch =>
+const mapDispatchToProps = (dispatch) =>
   bindActionCreators(
-    { storeSentMail, storeDraftMail, deleteDraftMail },
+    {storeSentMail, storeDraftMail, deleteDraftMail},
     dispatch
   );
 

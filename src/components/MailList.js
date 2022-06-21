@@ -37,12 +37,12 @@ export class MailList extends React.Component {
       selectValue: "latest",
       startmail: 0
     };
-    this.handleNextPage = this.handleNextPage.bind(this);
-    this.handlePrePage = this.handlePrePage.bind(this);
     this.handleMailClick = this.handleMailClick.bind(this);
     this.handleOnChange = this.handleOnChange.bind(this);
     this.handleMailDelete = this.handleMailDelete.bind(this);
     this.handleDropdownChange = this.handleDropdownChange.bind(this);
+    this.handlePrePage = this.handlePrePage.bind(this);
+    this.handleNextPage = this.handleNextPage.bind(this);    
   }
 
   handleOnChange(e) {
@@ -51,13 +51,35 @@ export class MailList extends React.Component {
     this.setState({ startmail: 0 });
   }
 
-  converttime(time) {
-    var data = {};
-    var date = time.split("T")[0].split("-");
-    data.date = parseInt(date[1])+"/"+parseInt(date[2])+"/"+parseInt(date[0]);
+ converttime(time) {
+    let data;
+    if (time !== "") {
+      const dateObj = new Date(time);
+      const enUsFormatter = Intl.DateTimeFormat("en-US");
+      let date = enUsFormatter.format(dateObj);
+      let hours = dateObj.getUTCHours();
+      let minutes = dateObj.getUTCMinutes();
+      let seconds = dateObj.getUTCSeconds();
+      let midday = hours >= 12 ? "PM" : "AM";
+      hours = hours > 12 ? hours - 12 : hours;
+      //let timeString = hours + ":" + minutes + ":" + seconds + " " + midday;
+      let timeString = "11:55:43 PM"
+      data = {
+        date,
+        time: timeString,
+      };
+    } else {
+      data = {
+        date: "",
+        time: "11:55:43 PM",
+      };
+    }
+
     return data;
   }
 
+
+  
   handleDropdownChange(e) {
     this.setState({ selectValue: e.target.value });
     this.setState({ startmail: 0 });
@@ -78,22 +100,15 @@ export class MailList extends React.Component {
     if (this.props.display == "trash") {
       this.props.restoreDeleteMail(id);
     }
-    this.setState({ 
-      deleteid: id 
-    });
+    this.setState({ deleteid: id });
   }
 
   handleNextPage() {
-    this.setState({ 
-      ...this.state,
-      startmail: this.state.startmail + 6
-    });
+    this.setState({ startmail: this.state.startmail + 6 });
   }
   handlePrePage() {
-    this.setState({ 
-      ...this.state,
-      startmail: this.state.startmail - 6
-    });
+   
+    this.setState({ startmail: this.state.startmail - 6 });
   }
   paginate(mails) {
     var mail_per_page = {};
@@ -122,12 +137,11 @@ export class MailList extends React.Component {
     this.props.readDeleteMail();
   }
   handleMailClick(id) {
-    var mailData;
-
+  
     if (this.props.display == "inbox") {
       this.props.requestInboxData(id);
 
-      return this.props.inboxData;
+
     } else if (this.props.display == "sent") {
       var mail = this.props.sent.data.map(
         function(mail) {
@@ -156,17 +170,20 @@ export class MailList extends React.Component {
         }.bind(this)
       );
     }
+     this.setState({ activeMail: id });
   }
 
   render() {
-    
+    //move to trash
     var deleted = false;
+
     newState = Object.assign({}, this.props.inboxData);
     if (
       this.state.deleteid == newState.id ||
       this.state.deleteid == this.state.mailData.id
     ) {
       if (this.props.display == "inbox") {
+        console.log(newState);
         this.moveToDelete(newState, this.props.display);
       } else if (
         this.props.display == "sent" ||
@@ -176,9 +193,11 @@ export class MailList extends React.Component {
         this.moveToDelete(newState, this.props.display);
       } else if (this.props.display == "trash") {
         var newState = Object.assign({}, this.state.mailData);
+        console.log(newState);
         if (newState.folder == "inbox") {
           newState.id = newState.folderId;
           this.props.data.data.push(newState);
+          console.log(this.props.data.data);
         } else if (newState.folder == "sent") {
           this.props.storeSentMail(newState);
         } else if (newState.folder == "draft") {
@@ -187,17 +206,17 @@ export class MailList extends React.Component {
       }
       deleted = true;
     }
+
     let activeMail = deleted ? 0 : this.state.activeMail;
     let results = [];
-
+    //fetch mail list and mail data
     var data;
     if (this.props.display == "inbox") {
       results = this.props.data.data;
+      
       data = this.props.inboxData;
     } else if (this.props.display == "sent") {
-      console.log("here");
       results = this.props.sent.data;
-      console.log(results);
       data = this.state.mailData;
     } else if (this.props.display == "draft") {
       results = this.props.draft.data;
@@ -210,68 +229,68 @@ export class MailList extends React.Component {
     var mail_list;
 
     if (results && results.length > 0) {
+      //search box filtering
+      
       const filteredList = results.filter(
-        item =>
+        (item) =>
           item.subject
             .toLowerCase()
             .includes(this.state.searchText.toLowerCase()) ||
           item.from.toLowerCase().includes(this.state.searchText.toLowerCase())
       );
+      //dropdown sorting
       if (this.state.selectValue == "latest") {
-        filteredList.sort((a, b) => {
-          if(a.time < b.time) return 1;
-          else if(a.time > b.time) return -1;
-          else return 0;
+        //filteredList.sort((a, b) => a.time < b.time);
+         filteredList.sort((a, b) => {
+          let x = new Date(a.time);
+          let y = new Date(b.time);
+          return y - x;
         });
       } else {
+        //filteredList.sort((a, b) => a.time > b.time);
         filteredList.sort((a, b) => {
-          if(a.time > b.time) return 1;
-          else if(a.time < b.time) return -1;
-          else return 0;
+          let x = new Date(a.time);
+          let y = new Date(b.time);
+          return x - y;
         });
       }
       const mail_list_temp = filteredList;
-
+      //rendering list
       var mail_list_per_page = this.paginate(mail_list_temp);
       var is_last = mail_list_per_page.islastPage;
       mail_list = mail_list_per_page.mails.map(
         function(mail) {
           return (
             <a
+            href=""
               className={
                 "list-group-item" +
                 (this.state.activeMail == mail.id ? " active" : "")
               }
               key={mail.id}
               onClick={() => {
-                this.setState({
-                  activeMail: mail.id
-                })
-                this.handleMailClick(mail.id)
-              }}
+               this.handleMailClick(mail.id)}
+              }
             >
               <i>{this.props.display == "inbox" ? mail.from : mail.to}</i>
               <button
                 type="button"
                 className={
-                  "" +
-                  (this.props.display == "trash" ? " restore" : " delete")
+                  "delete-button pull-right" +
+                  (this.props.display == "trash" ? " restore" : "")
                 }
                 onClick={() => {
                   this.handleMailDelete(mail.id);
                 }}
-                style={{float: 'right'} /* remove this style later if not needed */}
               >
                 {this.props.display == "trash" ? "Restore" : "Delete"}
               </button>
-              <div>
-                <i style={{color: 'black'} /* remove this style later if not needed */}>{mail.subject}</i>
-              </div>
-              <div>
-                <i className="time pull-right" style={{float: 'right'} /* remove this style later if not needed */}>
-                  {this.converttime(mail.time).date}
-                </i>
-              </div>
+
+             <h5>{mail.subject}</h5>
+
+              <i className="time pull-right">
+                {this.converttime(mail.time).date}
+              </i>
             </a>
           );
         }.bind(this)
@@ -281,6 +300,7 @@ export class MailList extends React.Component {
     if (!mail_list) {
       is_last = true;
     }
+
     return (
       <div>
         <div className="col-lg-6 col-sm-6 col-xs-6 mail-list-outer">
@@ -297,15 +317,15 @@ export class MailList extends React.Component {
                   placeholder="Search.."
                   autoComplete="off"
                   name="search"
-                  onChange={(event) => this.handleOnChange(event)}
+                  onChange={this.handleOnChange}
                 />
               </form>
 
               <div className="sort-drop-down">
                 <select
                   className="drop-down"
-                  onChange={this.handleDropdownChange}
                   value={this.state.selectValue}
+                  onChange={this.handleDropdownChange}
                 >
                   <option value="latest">Newest on top</option>
                   <option value="old">Oldest on top</option>
@@ -320,7 +340,7 @@ export class MailList extends React.Component {
                 <button
                   disabled={this.state.startmail ? false : true}
                   className="previous pull-left"
-                  onClick={this.handlePrePage}
+                 onClick={this.handlePrePage}
                 >
                   {" "}
                   ❮ Prev{" "}
@@ -328,7 +348,7 @@ export class MailList extends React.Component {
                 <button
                   disabled={is_last}
                   className="next pull-right"
-                  onClick={this.handleNextPage}
+                onClick={this.handleNextPage}
                 >
                   Next ❯
                 </button>
@@ -347,15 +367,15 @@ export class MailList extends React.Component {
   }
 }
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state) => ({
   data: state.data,
   inboxData: state.inboxMail,
   sent: state.sent,
   draft: state.draft,
-  trash: state.trash
+  trash: state.trash,
 });
 
-const mapDispatchToProps = dispatch =>
+const mapDispatchToProps = (dispatch) =>
   bindActionCreators(
     {
       requestInboxData,

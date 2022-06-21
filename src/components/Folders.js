@@ -8,18 +8,15 @@ import { storeComposeMail } from "../actions/compose.js";
 import { requestApiData } from "../actions/inbox.js";
 
 export class Folders extends React.Component {
-  componentWillMount() {
-    this.props.requestApiData();
-  }
-  handleCompose() {
-    
-  }
+
+  handleCompose(e) {}
 
   render() {
     return (
       <div className="folders vl">
         <NavLink
           className="composebtn outer"
+          onClick={() =>this.handleCompose()}
           to="/composemail"
           
         >

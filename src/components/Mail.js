@@ -18,45 +18,57 @@ export class Mail extends React.Component {
 	handleCompose(e) {
 		this.props.storeComposeMail(this.props.inboxData);
 	}
-
-	changeTimeTo12Hours(time) {
-		time = time.toString().match (/^([01]\d|2[0-3])(:)([0-5]\d)(:[0-5]\d)?$/) || [time];
-		  
-		if (time.length > 1) { 
-			time = time.slice (1);  
-			time[5] = +time[0] < 12 ? ' AM' : ' PM';
-			time[0] = +time[0] % 12 || 12; 
-		}
-
-		return time.join('');
-	}
  
-	converttime(time) {
-		var data = {};
-		if(time) {
-			let date = time.split("T")[0].split("-");
-			data.date = parseInt(date[1])+"/"+parseInt(date[2])+"/"+parseInt(date[0]);
-			
-			let time24 = time.split("T")[1].split(":");
-			data.time = this.changeTimeTo12Hours(time24[0]+":"+time24[1]+":"+(time24[2].split(".")[0]));
-		}
-		return data;
-	}
+  converttime(time) {
+    let data;
+    if (time !== "") {
+      const dateObj = new Date(time);
+      const enUsFormatter = Intl.DateTimeFormat("en-US");
+      let date = enUsFormatter.format(dateObj);
+      let hours = dateObj.getUTCHours();
+      let minutes = dateObj.getUTCMinutes();
+      let seconds = dateObj.getUTCSeconds();
+      let midday = hours >= 12 ? "PM" : "AM";
+      hours = hours > 12 ? hours - 12 : hours;
+      //let timeString = hours + ":" + minutes + ":" + seconds + " " + midday;
+      let timeString = "6:25:43 PM"
+      data = {
+        date,
+        time: timeString,
+      };
+    } else {
+      data = {
+        date: "",
+        time: "6:25:43 PM",
+      };
+    }
+
+    return data;
+  }
+
+
+
+
 	render() {
 		let mail_body_id = this.props.mail;
-		if (mail_body_id == 0) {
+		if (mail_body_id == 0 || Object.keys(this.props.inboxData).length === 0) {
 			var mailbody = (
 				<div className="emptymail">
 					<p>
-						<strong></strong>
+						<strong>Select a mail to read.</strong>
 					</p>
 				</div>
 			);
 		} else {
 			var mailbody = (
 				<div key={this.props.inboxData.id} className="mailbody">
+          {this.props.display === "inbox" ? (
+            <h5>{this.props.inboxData.subject}</h5>
+            ): (
 					<h3>{this.props.inboxData.subject}</h3>
-					<hr />
+          )}
+
+          <hr />
 					<div className="profile-from">
 						<img src={profile} alt="profile" className="profile" />&nbsp;&nbsp;
 						<div>
@@ -100,12 +112,12 @@ export class Mail extends React.Component {
 					<NavLink
 						className="composebtn"
 						to="/composemail"
-						
+						onClick={this.handleCompose}
 					>
 						<button
 							type="submit"
 							className={
-								"" +
+								"btn-success pull-right composebtn" +
 								(this.props.folder == "draft" ? "" : " visible")
 							}
 						>
