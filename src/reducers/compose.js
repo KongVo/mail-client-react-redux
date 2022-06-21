@@ -14,11 +14,12 @@ export default (state = initialState, action) => {
   switch (action.type) {
     case STORE_COMPOSE_MAIL:
       if (action.payload) {
-        let compose = {};
+        if (Array.isArray(action.payload))
+          return{...state, data: [...action.payload]};
+          else return {...state, data: {...action.payload}};
         
-        return compose;
       } else {
-        return state;
+        return initialState;
       }
     default:
       return state;

@@ -16,31 +16,44 @@ initialState.data = [
 export default (state = {}, action) => {
   switch (action.type) {
     case READ_DRAFT_MAIL:
-      return null;
-      break;
+      return {...state};
+
     case STORE_DRAFT_MAIL:
       var found = false;
+
       for (var i = 0; i < initialState.data.length; i++) {
-        if (initialState.data[i].id == action.payload.id) {
-          initialState.data[i]=action.payload
+        if (state.data[i].id == action.payload.id) {
+          state.data[i]=action.payload;
           found = true;
           break;
         }
       }
-      if(!found){       }
+
+      if(!found){       
+        let id = state.id + 1;
+        action.payload.time = new Date().toUTCString();
+        return {id, data: [...state.data, action.payload]};
+      }
       
-      return initialState;
-      break;
+      return state;
+     
     case DELETE_DRAFT_MAIL:
           
-      return initialState;
+      return {
+        id: state.id + 1,
+        data: state.data.filter((id) => id !== action.payload),
+      };
       break;
 
     case RESTORE_DRAFT_MAIL:
-   
-        return initialState;
+        action.payload.id = state.id + 1;
+        action.payload.time = new Date().toUTCString();
+
+        return {id: action.payload.id + 1, 
+          data: [...state.data, action.payload]};
         break;
+        
     default:
-      return state;
+      return initialState;
   }
 };
